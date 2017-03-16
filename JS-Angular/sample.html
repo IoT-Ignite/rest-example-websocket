@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title class="iotignite-header"></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="css/custom.css" rel="stylesheet">
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse">
+    <div class="text-center lbl_header">
+
+        <span class="pull-right"></span>
+
+        <h2 class="header-login" style="width: 425px; font-size: 23px; margin: 0 auto; line-height: 60px;"><img src="img/logo.png"><br></h2>
+    </div>
+</nav>
+
+<div class="starter-template">
+
+    <div class="row" ng-app="myApp" ng-controller="appCtrl">
+        <div class="col-md-4 col-md-offset-4">
+            <div class="row">
+                <div class="col-md-12">
+                    <div ng-bind-html="message"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12"><input type="text" ng-model="username" name="username" style="color: black;" class="col-xs-12"/></div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <input type="password" ng-model="password" name="password" class="col-xs-12" style="color: black;" autocomplete="new-password"/>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 text-right">
+                    <button class="btn btn-primary col-xs-6" ng-click="getToken()">Get Access Token</button>
+                </div>
+                <div class="col-md-6 text-right">
+                    <button class="btn btn-primary col-xs-6" ng-click="showUserInfo()">Show User Info</button>
+                </div>
+            </div>
+            
+            <br>
+            <br>
+            
+            <div class="row" ng-show="tokenInfo">
+                <div class="col-md-12">
+                    <div class="row">
+                        <strong>Access Token: </strong>
+                        <span ng-bind="accessToken"></span>
+                    </div>
+                    <div class="row">
+                        <strong>Refresh Token: </strong>
+                        <span ng-bind="refreshToken"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row" ng-show="userInfo">
+                <div class="col-md-12">
+                    <div class="row">
+                        <strong>First Name: </strong>
+                        <span ng-bind="firstName"></span>
+                    </div>
+                    <div class="row">
+                        <strong>Last Name: </strong>
+                        <span ng-bind="lastName"></span>
+                    </div>
+                    <div class="row">
+                        <strong>Mail: </strong>
+                        <span ng-bind="mail"></span>
+                    </div>
+                    <div class="row">
+                        <strong>Brand: </strong>
+                        <span ng-bind="brand"></span>
+                    </div>
+                    <div class="row">
+                        <strong>Tenant Domain: </strong>
+                        <span ng-bind="tenantDomain"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="js/jquery-1.11.2.min.js"></script>
+<script src="js/angular.min.js"></script>
+
+<script>
+    var app = angular.module('myApp', []);
+    
+    app.controller('appCtrl', function($scope, $http, $httpParamSerializerJQLike, $sce) {
+        $scope.username = "";
+        $scope.password = "";
+
+        $scope.getToken = function() {
+            $scope.tokenInfo = false;
+            $scope.userInfo = false;
+            $scope.message = "";
+
+            $http({
+                url: 'https://api.ardich.com/api/v3/login/oauth',
+                method: 'POST',
+                data: $httpParamSerializerJQLike({"grant_type": "password", "username": $scope.username.trim(), "password": $scope.password.trim()}),
+                headers: {'Authorization': 'Basic ' + btoa("frontend:"), 'Content-Type': 'application/x-www-form-urlencoded'}
+            }).success(function(result) {
+                $scope.accessToken = result.access_token;
+                $scope.refreshToken = result.refresh_token;
+
+                $scope.tokenInfo = true;
+            }).error(function(error) {
+                $scope.message = $sce.trustAsHtml('<label style="color: red;">' + error.error_description + '</label>');
+            });
+        }
+
+        $scope.showUserInfo = function() {
+            $scope.tokenInfo = false;
+            $scope.userInfo = false;
+            $scope.message = "";
+
+            $http({
+                url: 'https://api.ardich.com/api/v3/login/oauth',
+                method: 'POST',
+                data: $httpParamSerializerJQLike({"grant_type": "password", "username": $scope.username.trim(), "password": $scope.password.trim()}),
+                headers: {'Authorization': 'Basic ' + btoa("frontend:"), 'Content-Type': 'application/x-www-form-urlencoded'}
+            }).success(function(token) {
+                $http({
+                    url: 'https://api.ardich.com/api/v3/sysuser/auditor',
+                    method: 'GET',
+                    headers: {'Authorization': 'Bearer ' + token.access_token, 'Content-Type': 'application/json'}
+                }).success(function(result) {
+                    $scope.firstName = result.firstName;
+                    $scope.lastName = result.lastName;
+                    $scope.mail = result.mail;
+                    $scope.brand = result.brand;
+                    $scope.tenantDomain = result.tenantDomain;
+
+                    $scope.userInfo = true;
+                }).error(function(error) {
+                    $scope.message = $sce.trustAsHtml('<label style="color: red;">' + error.error_description + '</label>');
+                });
+            }).error(function(error) {
+                $scope.message = $sce.trustAsHtml('<label style="color: red;">' + error.error_description + '</label>');
+            });
+
+        }
+    });
+    
+    
+    
+</script>
+</body>
+
+</html>

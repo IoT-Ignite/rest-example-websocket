@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title class="iotignite-header"></title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="css/custom.css" rel="stylesheet">
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse">
+    <div class="text-center lbl_header">
+
+        <span class="pull-right"></span>
+
+        <h2 class="header-login" style="width: 425px; font-size: 23px; margin: 0 auto; line-height: 60px;"><img src="img/logo.png"><br></h2>
+    </div>
+</nav>
+
+<div class="starter-template">
+
+    <div class="row">
+        <div class="col-md-4 col-md-offset-4">
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <div id="message"></div>
+                </div>
+            </div>
+            
+            <br>
+            
+            <div class="row">
+                <div class="col-md-12"><label>Username</label></div>
+                <div class="col-md-12">
+                    <input type="text" id="username" name="username" style="color: black;" class="col-xs-12"/>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12"><label>Password</label></div>
+                <div class="col-md-12">
+                    <input type="password" id="password" name="password" class="col-xs-12" style="color: black;" autocomplete="new-password"/>
+                </div>
+            </div>
+            
+            <br>
+            
+            <div class="row">
+                <div class="row">
+                    <div class="col-md-6 col-md-offset-3">
+                        <button id="loginBtn" class="btn btn-primary col-xs-12"><i class="icon-key"></i> Login</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="js/jquery-1.11.2.min.js"></script>
+
+<script>
+    $('#loginBtn').on('click', function (e) {
+        var username = $('#username').val();
+        var password = $('#password').val();
+        
+        window.localStorage.setItem("username", username);
+
+        getToken(username.trim(), password.trim());
+
+    });
+    $('body').keypress(function (e) {
+        var key = e.which;
+        if(key == 13)  // the enter key code
+        {
+            $('#loginBtn').click();
+            return false;
+        }
+    });
+
+    var data = {"user": "me!"};
+
+    var tokenUrl = 'https://api.ardich.com/api/v3/login/oauth';
+
+    function getToken(username, password) {
+        var data = {"grant_type": "password", "username": username, "password": password};
+
+        $.ajax({
+            url: tokenUrl,
+            type: 'POST',
+            data: data,
+            dataType: 'json',
+            headers: {'Authorization': 'Basic ZnJvbnRlbmQ6', 'Content-Type': 'application/x-www-form-urlencoded'}
+        }).done(loginSuccess).fail(loginError);
+    }
+
+    function loginSuccess(data) {
+        if (data.hasOwnProperty('access_token')) {
+            setToken(data.access_token);
+        }
+
+        window.location.href = "./index.html";
+        return;
+    }
+
+    function loginError(error) {
+        $('#message').html('<label style="color: red;">' + error.responseJSON.error_description + '</label>');
+    }
+    
+    $('#username').on('input', function() {
+        $('#message').html('');
+    });
+    
+    $('#password').on('input', function() {
+        $('#message').html('');
+    });
+
+    function setToken(token) {
+        window.localStorage.setItem("accessToken", token);
+    }
+
+</script>
+</body>
+
+</html>
